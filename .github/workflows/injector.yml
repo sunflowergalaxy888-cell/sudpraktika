@@ -1,0 +1,225 @@
+# .github/workflows/injector.yml
+# GitHub Action для автоматичного оновлення SudPraktika
+
+name: SudPraktika Injector
+
+on:
+  # Автоматичний запуск кожні 2 години
+  schedule:
+    - cron: '0 */2 * * *'
+  
+  # Ручний запуск через GitHub interface
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: 'Примусово оновити всі пости'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  update-decisions:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Завантажуємо код репозиторію
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Повна історія для правильної роботи Jekyll
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Налаштовуємо Python
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      # Встановлюємо залежності Python
+      - name: 📦 Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests PyPDF2 pyyaml beautifulsoup4
+          pip install python-telegram-bot==20.7
+      
+      # Налаштовуємо Ruby для Jekyll (якщо потрібно)
+      - name: 💎 Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+          bundler-cache: true
+      
+      # Перевіряємо наявність необхідних файлів
+      - name: 🔍 Check project structure
+        run: |
+          echo "Checking project structure..."
+          ls -la
+          
+          # Створюємо необхідні директорії якщо їх немає
+          mkdir -p _decisions
+          mkdir -p _data
+          mkdir -p scripts
+          
+          # Перевіряємо наявність _config.yml
+          if [ ! -f "_config.yml" ]; then
+            echo "⚠️ _config.yml not found, creating basic configuration"
+            echo "title: SudPraktika" > _config.yml
+            echo "description: Кримінальний кодекс України з практикою ВС" >> _config.yml
+          fi
+      
+      # Запускаємо інджестер
+      - name: 🤖 Run Telegram injector
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
+          FORCE_UPDATE: ${{ github.event.inputs.force_update }}
+        run: |
+          echo "🚀 Starting SudPraktika injector..."
+          echo "Channel: $TELEGRAM_CHANNEL"
+          echo "Force update: $FORCE_UPDATE"
+          
+          cd scripts
+          python telegram_injector.py
+      
+      # Перевіряємо зміни
+      - name: 📊 Check for changes
+        id: changes
+        run: |
+          git add .
+          if git diff --staged --quiet; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No new decisions found"
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "✅ New decisions detected"
+            git status --porcelain
+          fi
+      
+      # Генеруємо статистику
+      - name: 📈 Generate statistics
+        if: steps.changes.outputs.changes == 'true'
+        run: |
+          echo "=== SudPraktika Statistics ===" > update_stats.txt
+          echo "Date: $(date)" >> update_stats.txt
+          echo "" >> update_stats.txt
+          
+          # Підраховуємо файли
+          articles_count=$(find _articles -name "*.md" 2>/dev/null | wc -l || echo "0")
+          decisions_count=$(find _decisions -name "*.md" 2>/dev/null | wc -l || echo "0")
+          
+          echo "📚 Articles: $articles_count" >> update_stats.txt
+          echo "⚖️ Decisions: $decisions_count" >> update_stats.txt
+          echo "" >> update_stats.txt
+          
+          # Показуємо нові файли
+          echo "🆕 New files:" >> update_stats.txt
+          git diff --staged --name-status >> update_stats.txt
+          
+          cat update_stats.txt
+      
+      # Коммітимо зміни
+      - name: 💾 Commit changes
+        if: steps.changes.outputs.changes == 'true'
+        run: |
+          # Налаштовуємо Git користувача
+          git config --local user.email "action@github.com"
+          git config --local user.name "SudPraktika Bot"
+          
+          # Створюємо комміт
+          commit_message="🤖 Автооновлення: додано нові рішення ВС"
+          
+          # Додаємо статистику до комміта якщо є
+          if [ -f update_stats.txt ]; then
+            commit_message="$commit_message
+
+$(cat update_stats.txt)"
+          fi
+          
+          git commit -m "$commit_message"
+          
+          echo "✅ Changes committed successfully"
+      
+      # Пушимо зміни
+      - name: 🚀 Push changes
+        if: steps.changes.outputs.changes == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+      
+      # Очікуємо деплою GitHub Pages
+      - name: ⏳ Wait for GitHub Pages deployment
+        if: steps.changes.outputs.changes == 'true'
+        run: |
+          echo "✅ Changes pushed to main branch"
+          echo "🌐 GitHub Pages will automatically deploy the updates"
+          echo "🔗 Site will be available at: https://${{ github.repository_owner }}.github.io/sudpraktika"
+          
+          # Чекаємо трохи для початку деплою
+          sleep 30
+      
+      # Валідація сайту (опціонально)
+      - name: 🔍 Validate site structure
+        if: steps.changes.outputs.changes == 'true'
+        run: |
+          echo "Validating Jekyll structure..."
+          
+          # Перевіряємо основні файли
+          required_files=("_config.yml" "index.html")
+          for file in "${required_files[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ $file exists"
+            else
+              echo "❌ $file missing"
+              exit 1
+            fi
+          done
+          
+          # Перевіряємо структуру директорій
+          required_dirs=("_articles" "_decisions" "_data")
+          for dir in "${required_dirs[@]}"; do
+            if [ -d "$dir" ]; then
+              echo "✅ $dir directory exists"
+            else
+              echo "⚠️ $dir directory missing"
+            fi
+          done
+          
+          echo "🎉 Site structure validation completed"
+      
+      # Повідомлення про завершення
+      - name: 📢 Summary
+        run: |
+          echo "=== SudPraktika Update Summary ==="
+          echo "🕐 Run time: $(date)"
+          echo "🔄 Trigger: ${{ github.event_name }}"
+          
+          if [ "${{ steps.changes.outputs.changes }}" == "true" ]; then
+            echo "✅ Status: New decisions added"
+            echo "🌐 Site will be updated at: https://${{ github.repository_owner }}.github.io/sudpraktika"
+          else
+            echo "ℹ️ Status: No updates needed"
+          fi
+          
+          echo "🔍 Check logs above for details"
+
+  # Додатковий job для моніторингу помилок
+  notify-on-failure:
+    runs-on: ubuntu-latest
+    needs: update-decisions
+    if: failure()
+    
+    steps:
+      - name: 🚨 Notify on failure
+        run: |
+          echo "❌ SudPraktika injector failed!"
+          echo "🔍 Check the logs above for error details"
+          echo "🛠️ Possible issues:"
+          echo "   - Invalid Telegram credentials"
+          echo "   - Network connectivity problems"
+          echo "   - Rate limiting"
+          echo "   - Malformed content"
+          
+          # Тут можна додати надсилання повідомлень в Telegram або email
+          # Наприклад, через webhook або інший сервіс
