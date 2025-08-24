@@ -1,0 +1,107 @@
+<!-- _layouts/article.html - Шаблон для статей КК -->
+---
+layout: default
+---
+
+<div class="article-page">
+    <div class="container">
+        <article class="article-content">
+            <!-- Заголовок статті -->
+            <header class="article-header">
+                <div class="article-number">{{ page.number }}</div>
+                <h1 class="article-title">{{ page.title }}</h1>
+                
+                <!-- Мета-інформація -->
+                <div class="article-meta">
+                    <span class="article-type">Стаття Кримінального кодексу України</span>
+                    {% if page.article_numbers %}
+                    <span class="related-articles">
+                        Пов'язані статті: 
+                        {% for num in page.article_numbers %}
+                            <a href="/stattya-{{ num }}/">{{ num }}</a>{% unless forloop.last %}, {% endunless %}
+                        {% endfor %}
+                    </span>
+                    {% endif %}
+                </div>
+            </header>
+
+            <!-- Текст статті -->
+            <div class="article-body">
+                {{ content }}
+            </div>
+
+            <!-- Навігація між статтями -->
+            <nav class="article-navigation">
+                {% assign prev_num = page.number | minus: 1 %}
+                {% assign next_num = page.number | plus: 1 %}
+                {% assign prev_article = site.articles | where: "number", prev_num | first %}
+                {% assign next_article = site.articles | where: "number", next_num | first %}
+                
+                <div class="nav-links">
+                    {% if prev_article %}
+                    <a href="{{ prev_article.url }}" class="nav-prev">
+                        <span class="nav-direction">← Попередня</span>
+                        <span class="nav-title">Стаття {{ prev_article.number }}</span>
+                    </a>
+                    {% endif %}
+                    
+                    {% if next_article %}
+                    <a href="{{ next_article.url }}" class="nav-next">
+                        <span class="nav-direction">Наступна →</span>
+                        <span class="nav-title">Стаття {{ next_article.number }}</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </nav>
+        </article>
+
+        <!-- Бічна панель з рішеннями ВС -->
+        <aside class="sidebar">
+            <div class="decisions-section">
+                <h3>Практика Верховного Суду</h3>
+                
+                {% assign related_decisions = site.decisions | where: 'article_numbers', page.number | sort: 'date' | reverse %}
+                
+                {% if related_decisions.size > 0 %}
+                    <div class="decisions-list">
+                        {% for decision in related_decisions limit: 10 %}
+                        <div class="decision-card">
+                            <h4><a href="{{ decision.url }}">{{ decision.title }}</a></h4>
+                            <div class="decision-date">{{ decision.date | date: "%d.%m.%Y" }}</div>
+                            <p class="decision-excerpt">{{ decision.content | strip_html | truncate: 120 }}</p>
+                        </div>
+                        {% endfor %}
+                        
+                        {% if related_decisions.size > 10 %}
+                        <div class="view-more">
+                            <a href="/search/?article={{ page.number }}" class="btn-outline">
+                                Переглянути всі рішення ({{ related_decisions.size }})
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="no-decisions">
+                        <p>Поки що немає рішень Верховного Суду по цій статті.</p>
+                        <p><small>Рішення додаються автоматично з офіційного каналу ВС.</small></p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Статистика -->
+            <div class="article-stats">
+                <h4>Статистика</h4>
+                <div class="stat-item">
+                    <span class="stat-label">Рішень ВС:</span>
+                    <span class="stat-value">{{ related_decisions.size }}</span>
+                </div>
+                {% if related_decisions.size > 0 %}
+                <div class="stat-item">
+                    <span class="stat-label">Останнє рішення:</span>
+                    <span class="stat-value">{{ related_decisions.first.date | date: "%d.%m.%Y" }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </aside>
+    </div>
+</div>
