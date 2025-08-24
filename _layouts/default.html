@@ -1,0 +1,172 @@
+<!-- _layouts/default.html - Базовий шаблон -->
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if page.title %}{{ page.title }} - {% endif %}{{ site.title }}</title>
+    
+    <!-- SEO мета-теги -->
+    <meta name="description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}">
+    <meta name="keywords" content="кримінальний кодекс, верховний суд, судова практика, україна">
+    <meta name="author" content="SudPraktika">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}">
+    <meta property="og:description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ page.url | absolute_url }}">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}">
+    <meta name="twitter:description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ '/assets/favicon.ico' | relative_url }}">
+    
+    <!-- CSS стилі -->
+    <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ page.url | absolute_url }}">
+    
+    <!-- JSON-LD структуровані дані -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "{% if page.layout == 'article' %}LegalDocument{% elsif page.layout == 'decision' %}CourtDecision{% else %}Website{% endif %}",
+        "name": "{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}",
+        "description": "{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}",
+        "url": "{{ page.url | absolute_url }}",
+        "publisher": {
+            "@type": "Organization",
+            "name": "SudPraktika"
+        }{% if page.date %},
+        "datePublished": "{{ page.date | date_to_xmlschema }}",
+        "dateModified": "{{ page.date | date_to_xmlschema }}"{% endif %}
+    }
+    </script>
+</head>
+
+<body>
+    <!-- Шапка сайту -->
+    <header class="site-header">
+        <nav class="navbar">
+            <div class="container">
+                <div class="navbar-brand">
+                    <a href="{{ '/' | relative_url }}" class="brand-link">
+                        <span class="brand-icon">⚖️</span>
+                        <span class="brand-text">SudPraktika</span>
+                    </a>
+                </div>
+                
+                <div class="navbar-menu" id="navbarMenu">
+                    <a href="{{ '/' | relative_url }}" class="nav-link">Головна</a>
+                    <a href="{{ '/articles/' | relative_url }}" class="nav-link">Статті КК</a>
+                    <a href="{{ '/decisions/' | relative_url }}" class="nav-link">Рішення ВС</a>
+                    <a href="{{ '/search/' | relative_url }}" class="nav-link">Пошук</a>
+                    <a href="{{ '/about/' | relative_url }}" class="nav-link">Про проект</a>
+                </div>
+                
+                <button class="navbar-toggle" id="navbarToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Хлібні крошки -->
+    {% unless page.hide_breadcrumbs %}
+    <nav class="breadcrumb" aria-label="breadcrumb">
+        <div class="container">
+            <ol class="breadcrumb-list">
+                <li class="breadcrumb-item">
+                    <a href="{{ '/' | relative_url }}">Головна</a>
+                </li>
+                {% if page.layout == 'article' %}
+                <li class="breadcrumb-item">
+                    <a href="{{ '/articles/' | relative_url }}">Статті КК</a>
+                </li>
+                <li class="breadcrumb-item active">Стаття {{ page.number }}</li>
+                {% elsif page.layout == 'decision' %}
+                <li class="breadcrumb-item">
+                    <a href="{{ '/decisions/' | relative_url }}">Рішення ВС</a>
+                </li>
+                <li class="breadcrumb-item active">{{ page.title | truncate: 50 }}</li>
+                {% endif %}
+            </ol>
+        </div>
+    </nav>
+    {% endunless %}
+
+    <!-- Основний контент -->
+    <main class="main-content">
+        {{ content }}
+    </main>
+
+    <!-- Футер -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>SudPraktika</h4>
+                    <p>Кримінальний кодекс України з актуальною практикою Верховного Суду</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Корисні посилання</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://supreme.court.gov.ua/">Верховний Суд України</a></li>
+                        <li><a href="https://zakon.rada.gov.ua/">Законодавство України</a></li>
+                        <li><a href="https://reyestr.court.gov.ua/">Єдиний державний реєстр судових рішень</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Про проект</h4>
+                    <ul class="footer-links">
+                        <li><a href="{{ '/about/' | relative_url }}">Про SudPraktika</a></li>
+                        <li><a href="https://github.com/{{ site.github.repository_nwo }}">Вихідний код</a></li>
+                        <li><a href="{{ '/feed.xml' | relative_url }}">RSS</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; {{ 'now' | date: "%Y" }} SudPraktika. Всі права захищені.</p>
+                <p class="disclaimer">
+                    <small>
+                        Інформація носить довідковий характер. 
+                        Для прийняття правових рішень консультуйтеся з кваліфікованими юристами.
+                    </small>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="{{ '/assets/js/main.js' | relative_url }}"></script>
+    
+    <!-- Мобільне меню -->
+    <script>
+        document.getElementById('navbarToggle').addEventListener('click', function() {
+            document.getElementById('navbarMenu').classList.toggle('active');
+            this.classList.toggle('active');
+        });
+    </script>
+    
+    {% if site.google_analytics %}
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ site.google_analytics }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '{{ site.google_analytics }}');
+    </script>
+    {% endif %}
+</body>
+</html>
