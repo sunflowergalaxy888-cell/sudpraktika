@@ -1,0 +1,34 @@
+title: "SudPraktika"
+description: "Кримінальний кодекс України з практикою Верховного Суду"
+url: "https://sunflowergalaxy888.github.io"  # Замініть your-username на ваш логін
+baseurl: "/sudpraktika"
+
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+collections:
+  articles:
+    output: true
+    permalink: /stattya-:name/
+  decisions:
+    output: true
+    permalink: /rishennya/:name/
+
+defaults:
+  - scope:
+      path: "_articles"
+    values:
+      layout: "article"
+  - scope:
+      path: "_decisions"  
+    values:
+      layout: "decision"
+
+timezone: Europe/Kiev
+lang: uk
