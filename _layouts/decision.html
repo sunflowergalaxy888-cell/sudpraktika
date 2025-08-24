@@ -1,1 +1,84 @@
+<!-- _layouts/decision.html - Шаблон для рішень ВС -->
+---
+layout: default
+---
 
+<div class="decision-page">
+    <div class="container">
+        <article class="decision-content">
+            <!-- Заголовок рішення -->
+            <header class="decision-header">
+                <h1 class="decision-title">{{ page.title }}</h1>
+                
+                <!-- Мета-інформація -->
+                <div class="decision-meta">
+                    <div class="meta-item">
+                        <strong>Дата публікації:</strong> {{ page.date | date: "%d.%m.%Y" }}
+                    </div>
+                    
+                    {% if page.article_numbers %}
+                    <div class="meta-item">
+                        <strong>Статті КК:</strong>
+                        {% for article_num in page.article_numbers %}
+                            {% assign article = site.articles | where: "number", article_num | first %}
+                            {% if article %}
+                                <a href="{{ article.url }}" class="article-link">{{ article_num }}</a>{% unless forloop.last %}, {% endunless %}
+                            {% else %}
+                                {{ article_num }}{% unless forloop.last %}, {% endunless %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if page.source %}
+                    <div class="meta-item">
+                        <strong>Джерело:</strong> {{ page.source }}
+                    </div>
+                    {% endif %}
+                </div>
+            </header>
+
+            <!-- Текст рішення -->
+            <div class="decision-body">
+                {{ content }}
+            </div>
+
+            <!-- Теги та категорії -->
+            {% if page.tags %}
+            <div class="decision-tags">
+                <strong>Теги:</strong>
+                {% for tag in page.tags %}
+                    <span class="tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </article>
+
+        <!-- Пов'язані рішення -->
+        {% if page.article_numbers %}
+        <aside class="related-decisions">
+            <h3>Інші рішення по цим статтям</h3>
+            
+            {% assign related_decisions = '' | split: ',' %}
+            {% for article_num in page.article_numbers %}
+                {% assign article_decisions = site.decisions | where: 'article_numbers', article_num %}
+                {% assign related_decisions = related_decisions | concat: article_decisions %}
+            {% endfor %}
+            
+            {% assign related_decisions = related_decisions | uniq | sort: 'date' | reverse %}
+            {% assign filtered_decisions = related_decisions | where_exp: "decision", "decision.url != page.url" %}
+            
+            {% if filtered_decisions.size > 0 %}
+                <div class="related-list">
+                    {% for decision in filtered_decisions limit: 5 %}
+                    <div class="related-item">
+                        <h4><a href="{{ decision.url }}">{{ decision.title }}</a></h4>
+                        <div class="related-date">{{ decision.date | date: "%d.%m.%Y" }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </aside>
+        {% endif %}
+    </div>
+</div>
