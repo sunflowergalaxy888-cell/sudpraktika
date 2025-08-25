@@ -1,0 +1,65 @@
+---
+layout: default
+title: "SudPraktika – Кримінальний кодекс України"
+---
+
+<div class="home">
+
+  <h1>Кримінальний кодекс України</h1>
+  <p>З практикою Верховного Суду</p>
+
+  <!-- Загальна частина -->
+  <section>
+    <h2>Загальна частина</h2>
+    <ul>
+      {% for article in site.articles %}
+        {% if article.number < 100 %}
+          {% assign related_decisions = site.decisions | where_exp: "d", "d.article_numbers contains article.number" %}
+          <li>
+            <a href="{{ article.url }}">{{ article.title }}</a>
+            {% if related_decisions.size > 0 %}
+              <span class="decision-count has-decisions">({{ related_decisions.size }} рішень ВС)</span>
+            {% else %}
+              <span class="decision-count no-decisions">(0 рішень ВС)</span>
+            {% endif %}
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </section>
+
+  <!-- Особлива частина -->
+  <section>
+    <h2>Особлива частина</h2>
+    <ul>
+      {% for article in site.articles %}
+        {% if article.number >= 100 %}
+          {% assign related_decisions = site.decisions | where_exp: "d", "d.article_numbers contains article.number" %}
+          <li>
+            <a href="{{ article.url }}">{{ article.title }}</a>
+            {% if related_decisions.size > 0 %}
+              <span class="decision-count has-decisions">({{ related_decisions.size }} рішень ВС)</span>
+            {% else %}
+              <span class="decision-count no-decisions">(0 рішень ВС)</span>
+            {% endif %}
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </section>
+
+  <!-- Найчастіше використовувані статті -->
+  <section>
+    <h2>Найчастіше використовувані статті</h2>
+    <ul>
+      {% assign sorted_articles = site.articles | sort: "decisions_count" | reverse %}
+      {% for article in sorted_articles limit:10 %}
+        <li>
+          <a href="{{ article.url }}">{{ article.title }}</a>
+          <span class="decision-count">({{ article.decisions_count | default: 0 }} рішень ВС)</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+</div>
