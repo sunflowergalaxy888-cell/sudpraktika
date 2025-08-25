@@ -1,0 +1,13 @@
+.decision-count {
+  font-size: 0.9em;
+  margin-left: 8px;
+}
+
+.has-decisions {
+  color: #007700; /* зелений для статей з рішеннями */
+  font-weight: bold;
+}
+
+.no-decisions {
+  color: #999; /* сірий для статей без рішень */
+}
